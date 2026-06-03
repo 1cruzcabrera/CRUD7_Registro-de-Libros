@@ -8,7 +8,7 @@ Proyecto Final - Desarrollo y Técnicas de Aplicaciones Web
 - Brayan Fernando Ramírez Salinas	RS13036
 - Gerson Levi Martinez Avalos	    MA20093
 
-## Tema
+## Tema de Proyecto
 CRUD 7 - Registro de Libros
 
 ## Tecnologías
