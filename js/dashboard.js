@@ -138,3 +138,148 @@ function renderStatCards(stats) {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   RENDER: BARRA DE PROGRESO
+═══════════════════════════════════════════════════════════════ */
+
+function renderProgressBar(stats) {
+  try {
+    const fill    = document.getElementById('progress-fill');
+    const pctEl   = document.getElementById('progress-pct');
+    const descEl  = document.getElementById('progress-desc');
+
+    if (fill)   fill.style.width = `${stats.pctLeido}%`;
+    if (pctEl)  pctEl.textContent = `${stats.pctLeido}%`;
+    if (descEl) descEl.textContent =
+      `${stats.porEstado.leido} de ${stats.total} libro${stats.total !== 1 ? 's' : ''} leído${stats.porEstado.leido !== 1 ? 's' : ''}`;
+  } catch (error) {
+    console.error('[dashboard] Error renderizando barra de progreso:', error);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER: GRÁFICO DE GÉNEROS (barra CSS)
+═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Genera las barras CSS proporcionales al conteo por género.
+ * @param {Object.<string, number>} porGenero
+ */
+function renderGeneroChart(porGenero) {
+  try {
+    const container = document.getElementById('genero-chart');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const entries = Object.entries(porGenero).sort((a, b) => b[1] - a[1]);
+
+    if (entries.length === 0) {
+      container.innerHTML = '<p class="chart-empty">Sin datos de géneros aún.</p>';
+      return;
+    }
+
+    const maxCount = entries[0][1];
+
+    entries.forEach(([genre, count]) => {
+      const pct  = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+      const item = document.createElement('div');
+      item.className = 'bar-item';
+      item.innerHTML = `
+        <span class="bar-label" title="${escapeHtml(genre)}">${escapeHtml(genre)}</span>
+        <div class="bar-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+          <div class="bar-fill" style="width: ${pct}%"></div>
+        </div>
+        <span class="bar-count">${count}</span>
+      `;
+      container.appendChild(item);
+    });
+  } catch (error) {
+    console.error('[dashboard] Error renderizando gráfico de géneros:', error);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER: TOP 5 MEJOR CALIFICADOS
+═══════════════════════════════════════════════════════════════ */
+
+/**
+ * @param {Array} books  Hasta 5 libros mejor calificados
+ */
+function renderTopRated(books) {
+  try {
+    const list = document.getElementById('top-rated-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (!books || books.length === 0) {
+      list.innerHTML = '<li class="top-empty">Sin libros calificados aún.</li>';
+      return;
+    }
+
+    books.forEach((book, i) => {
+      const li = document.createElement('li');
+      li.className = 'top-item';
+      li.innerHTML = `
+        <div class="top-item-info">
+          <span class="top-item-title">${i + 1}. ${escapeHtml(book.titulo)}</span>
+          <span class="top-item-author">${escapeHtml(book.autor)} · ${book.anio}</span>
+        </div>
+        <span class="top-item-stars" aria-label="${book.calificacion} estrellas">
+          ${renderStars(book.calificacion)}
+        </span>
+      `;
+      list.appendChild(li);
+    });
+  } catch (error) {
+    console.error('[dashboard] Error renderizando top calificados:', error);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SESIÓN
+═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Calcula el tiempo transcurrido desde el inicio de sesión (SessionStorage)
+ * y actualiza #session-info.
+ */
+function updateSessionInfo() {
+  try {
+    const el = document.getElementById('session-info');
+    if (!el) return;
+
+    const start   = new Date(getSessionStart());
+    const now     = new Date();
+    const diffMs  = now - start;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffSec = Math.floor((diffMs % 60000) / 1000);
+
+    let elapsed;
+    if (diffMin >= 60) {
+      const h = Math.floor(diffMin / 60);
+      const m = diffMin % 60;
+      elapsed = `${h}h ${m}m`;
+    } else {
+      elapsed = `${diffMin}m ${diffSec}s`;
+    }
+
+    el.textContent =
+      `🕐 Sesión iniciada: ${start.toLocaleTimeString('es-ES')}  ·  Tiempo activo: ${elapsed}`;
+  } catch (error) {
+    console.error('[dashboard] Error actualizando info de sesión:', error);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   API PÚBLICA
+═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Actualiza el dashboard en background tras cualquier cambio CRUD.
+ * Llamado desde crud.js.
+ */
+function refreshDashboard() {
+  requestStats();
+}
