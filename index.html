@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LibroLog — Registro de Libros</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HAMBURGER (visible only on mobile)
+  ══════════════════════════════════════════════════════════ -->
+  <button id="btn-hamburger" aria-label="Abrir menú">☰</button>
+
+  <!-- Overlay to close sidebar on mobile tap-outside -->
+  <div id="sidebar-overlay"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════════════════════ -->
+  <aside id="sidebar" role="navigation" aria-label="Menú principal">
+
+    <div class="sidebar-logo">
+      <span class="logo-icon" aria-hidden="true">📚</span>
+      <h1 class="sidebar-title">LibroLog</h1>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-view="dashboard">
+        <span class="nav-icon" aria-hidden="true">📊</span>
+        Dashboard
+      </button>
+      <button class="nav-btn" data-view="libros" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">📖</span>
+        Mis Libros
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button id="btn-dark-mode" class="dark-toggle" aria-label="Cambiar tema">
+        <span class="toggle-icon" aria-hidden="true">🌙</span>
+        <span class="toggle-label">Modo Oscuro</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════════════════════════════ -->
+  <main id="main-content">
+
+    <!-- ───────────────────────────────────────────────────
+         VIEW: MIS LIBROS
+    ─────────────────────────────────────────────────────── -->
+    <section id="view-libros" class="view hidden" aria-label="Lista de libros">
+
+      <header class="content-header">
+        <h2>📖 Mis Libros</h2>
+        <button id="btn-nuevo-libro" class="btn btn-primary" aria-label="Agregar nuevo libro">
+          + Nuevo Libro
+        </button>
+      </header>
+
+      <!-- Filters bar -->
+      <div id="filters-bar" class="filters-bar" role="search">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="🔍 Buscar por título o autor…"
+          aria-label="Buscar libros"
+          autocomplete="off"
+        />
+        <select id="filter-estado" aria-label="Filtrar por estado">
+          <option value="todos">Todos los estados</option>
+          <option value="leido">Leído</option>
+          <option value="leyendo">Leyendo</option>
+          <option value="no-leido">No leído</option>
+        </select>
+        <select id="filter-genero" aria-label="Filtrar por género">
+          <option value="todos">Todos los géneros</option>
+        </select>
+        <button id="btn-clear-filters" class="btn btn-secondary">✕ Limpiar</button>
+      </div>
+
+      <!-- Books grid -->
+      <div id="books-grid" class="books-grid" role="list" aria-label="Lista de libros"></div>
+
+      <!-- Empty state (shown when no books match) -->
+      <div id="empty-state" class="empty-state hidden" aria-live="polite">
+        <span class="empty-state-icon" aria-hidden="true">📚</span>
+        <p id="empty-state-msg">Aún no tienes libros registrados.</p>
+        <button id="btn-empty-nuevo" class="btn btn-primary">+ Agregar primer libro</button>
+      </div>
+
+    </section>
+
+    <!-- ───────────────────────────────────────────────────
+         VIEW: DASHBOARD
+    ─────────────────────────────────────────────────────── -->
+    <section id="view-dashboard" class="view" aria-label="Dashboard de estadísticas">
+
+      <header class="content-header">
+        <h2>📊 Dashboard</h2>
+      </header>
+
+      <!-- Stat cards (populated by dashboard.js + worker.js) -->
+      <div id="stats-grid" class="stats-grid" aria-label="Métricas de lectura">
+
+        <div class="stat-card" aria-label="Total de libros">
+          <span class="stat-number" id="stat-total-val">0</span>
+          <span class="stat-label">Total libros</span>
+        </div>
+
+        <div class="stat-card stat-leido" aria-label="Libros leídos">
+          <span class="stat-number" id="stat-leidos-val">0</span>
+          <span class="stat-label">Leídos</span>
+        </div>
+
+        <div class="stat-card stat-leyendo" aria-label="Libros leyendo">
+          <span class="stat-number" id="stat-leyendo-val">0</span>
+          <span class="stat-label">Leyendo</span>
+        </div>
+
+        <div class="stat-card stat-noleido" aria-label="Libros no leídos">
+          <span class="stat-number" id="stat-noleido-val">0</span>
+          <span class="stat-label">No leídos</span>
+        </div>
+
+        <div class="stat-card" aria-label="Calificación promedio">
+          <span class="stat-number" id="stat-promedio-val">–</span>
+          <span class="stat-label">Cal. media</span>
+        </div>
+
+        <div class="stat-card" aria-label="Género favorito">
+          <span class="stat-number" id="stat-genero-val" style="font-size:1.1rem;">–</span>
+          <span class="stat-label">Género favorito</span>
+        </div>
+
+      </div>
+
+      <!-- Reading progress bar -->
+      <div class="dashboard-section">
+        <h3>📈 Progreso de lectura</h3>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div class="progress-wrap" style="flex:1;">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <span id="progress-pct" style="font-weight:700;color:var(--clr-primary);min-width:44px;text-align:right;">0%</span>
+        </div>
+        <p style="font-size:.82rem;color:var(--clr-text-muted);margin-top:8px;" id="progress-desc">
+          0 de 0 libros leídos
+        </p>
+      </div>
+
+      <!-- Genre bar chart -->
+      <div class="dashboard-section">
+        <h3>📚 Libros por género</h3>
+        <div id="genero-chart" class="bar-chart"></div>
+      </div>
+
+      <!-- Top rated -->
+      <div class="dashboard-section">
+        <h3>⭐ Top 5 mejor calificados</h3>
+        <ol id="top-rated-list" class="top-list"></ol>
+      </div>
+
+      <!-- Weather widget (API REST + geolocation) -->
+      <div class="dashboard-section">
+        <h3>🌤️ Clima actual</h3>
+        <div id="weather-widget" class="weather-card">
+          <p id="weather-city">Obteniendo ubicación…</p>
+          <p id="weather-temp"></p>
+          <p id="weather-desc"></p>
+        </div>
+      </div>
+
+      <!-- Session info (SessionStorage) -->
+      <div class="dashboard-section">
+        <p id="session-info" class="session-info" aria-live="polite"></p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MODAL — CREATE / EDIT
+  ══════════════════════════════════════════════════════════ -->
+  <div
+    id="modal-overlay"
+    class="modal-overlay hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <div class="modal">
+
+      <button id="modal-close" class="modal-close" aria-label="Cerrar">&times;</button>
+      <h2 id="modal-title">Nuevo Libro</h2>
+
+      <form id="book-form" novalidate autocomplete="off">
+        <!-- Hidden ID for edit mode -->
+        <input type="hidden" id="field-id" />
+
+        <!-- Título -->
+        <div class="form-group">
+          <label for="field-titulo">Título *</label>
+          <input
+            type="text"
+            id="field-titulo"
+            maxlength="200"
+            placeholder="Ej: Cien años de soledad"
+          />
+          <span class="error-msg" id="err-titulo" role="alert"></span>
+        </div>
+
+        <!-- Autor -->
+        <div class="form-group">
+          <label for="field-autor">Autor *</label>
+          <input
+            type="text"
+            id="field-autor"
+            maxlength="100"
+            placeholder="Ej: Gabriel García Márquez"
+          />
+          <span class="error-msg" id="err-autor" role="alert"></span>
+        </div>
+
+        <!-- Género -->
+        <div class="form-group">
+          <label for="field-genero">Género *</label>
+          <select id="field-genero">
+            <option value="">— Selecciona un género —</option>
+            <option value="Ficción">Ficción</option>
+            <option value="No-ficción">No-ficción</option>
+            <option value="Ciencia ficción">Ciencia ficción</option>
+            <option value="Fantasía">Fantasía</option>
+            <option value="Terror">Terror</option>
+            <option value="Romance">Romance</option>
+            <option value="Misterio">Misterio</option>
+            <option value="Thriller">Thriller</option>
+            <option value="Historia">Historia</option>
+            <option value="Biografía">Biografía</option>
+            <option value="Autoayuda">Autoayuda</option>
+            <option value="Ciencia">Ciencia</option>
+            <option value="Filosofía">Filosofía</option>
+            <option value="Poesía">Poesía</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <span class="error-msg" id="err-genero" role="alert"></span>
+        </div>
+
+        <!-- Año de publicación -->
+        <div class="form-group">
+          <label for="field-anio">Año de publicación *</label>
+          <input
+            type="number"
+            id="field-anio"
+            min="1000"
+            max="2026"
+            placeholder="Ej: 1967"
+          />
+          <span class="error-msg" id="err-anio" role="alert"></span>
+        </div>
+
+        <!-- Estado -->
+        <div class="form-group">
+          <label for="field-estado">Estado *</label>
+          <select id="field-estado">
+            <option value="">— Selecciona un estado —</option>
+            <option value="leido">Leído</option>
+            <option value="leyendo">Leyendo</option>
+            <option value="no-leido">No leído</option>
+          </select>
+          <span class="error-msg" id="err-estado" role="alert"></span>
+        </div>
+
+        <!-- Calificación (star widget) -->
+        <div class="form-group">
+          <label>Calificación *</label>
+          <div id="star-rating" class="star-rating" role="group" aria-label="Calificación de 1 a 5 estrellas">
+            <!-- Stars injected by initStarRating() in crud.js -->
+          </div>
+          <input type="hidden" id="field-calificacion" value="0" />
+          <span class="error-msg" id="err-calificacion" role="alert"></span>
+        </div>
+
+        <!-- Notas (opcional) -->
+        <div class="form-group">
+          <label for="field-notas">Notas <span style="font-weight:400;text-transform:none;">(opcional)</span></label>
+          <textarea
+            id="field-notas"
+            rows="3"
+            maxlength="500"
+            placeholder="Reseña personal, citas favoritas…"
+          ></textarea>
+          <span class="error-msg" id="err-notas" role="alert"></span>
+        </div>
+
+        <!-- Form actions -->
+        <div class="form-actions">
+          <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-book">Guardar libro</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TOAST
+  ══════════════════════════════════════════════════════════ -->
+  <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCRIPTS  (dependency order)
+  ══════════════════════════════════════════════════════════ -->
+  <script src="js/storage.js"></script>
+  <script src="js/validations.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/crud.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
